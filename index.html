@@ -1,0 +1,326 @@
+<html>
+
+<!-- The MIT License (MIT)
+
+Copyright (c) 2015 James Cipar
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE. -->
+
+<script type="text/javascript" src="numeric-1.2.6.js"></script>
+<script type="text/javascript" src="brewing-salts-numeric.js"></script>
+<script type="text/javascript" src="water-profile-library.js"></script>
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
+<link rel="stylesheet" href="https://ajax.googleapis.com/ajax/libs/jqueryui/1.11.3/themes/smoothness/jquery-ui.css" />
+<script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.11.3/jquery-ui.min.js"></script>
+
+<script type="text/javascript">
+"use strict";
+
+function round(value, exp) {
+  if (typeof exp === 'undefined' || +exp === 0)
+    return Math.round(value);
+
+  value = +value;
+  exp  = +exp;
+
+  if (isNaN(value) || !(typeof exp === 'number' && exp % 1 === 0))
+    return NaN;
+
+  // Shift
+  value = value.toString().split('e');
+  value = Math.round(+(value[0] + 'e' + (value[1] ? (+value[1] + exp) : exp)));
+
+  // Shift back
+  value = value.toString().split('e');
+  return +(value[0] + 'e' + (value[1] ? (+value[1] - exp) : -exp));
+}
+
+function optimize()
+{
+	var input = example_input;
+	for (var ion in input.target_profile) {
+		var input_name = "#input-" + ion;
+		input.target_profile[ion] = Number($(input_name).val());
+	}
+	for (var ion in input.initial_profile) {
+		var input_name = "#starting-" + ion;
+		input.initial_profile[ion] = Number($(input_name).val());
+	}
+	input.water_gallons = Number($('#water-gallons').val());
+	for (var salt in parameters.salts) {
+		if ($('#use-'+salt).is(':checked')) {
+			input.max_salts[salt] = 1000.0;
+		} else {
+			delete input.max_salts[salt];
+		}
+	}
+
+	var maintain_ratios = $('#maintain-sulfate-chloride-ratio').is(':checked')	;
+	// preserve sulfate:chloride ratio, rather than hitting targets
+	if (maintain_ratios && (input.initial_profile.chloride > input.target_profile.chloride)) {
+		var b = input.initial_profile.chloride / input.target_profile.chloride;
+		input.target_profile.chloride = input.initial_profile.chloride;
+		input.target_profile.sulfate *= b;
+		alert("Increasing sulfate target to maintain chloride:sulfate ratio, due to high chloride.");
+	}
+	if (maintain_ratios && (input.initial_profile.sulfate > input.target_profile.sulfate)) {
+		var b = input.initial_profile.sulfate / input.target_profile.sulfate;
+		input.target_profile.sulfate = input.initial_profile.sulfate;
+		input.target_profile.chloride *= b;
+		alert("Increasing chloride target to maintain chloride:sulfate ratio, due to high sulfate.");
+
+	}
+
+	var result = optimize_salts(parameters, input);
+	clear_output_tables();
+	// alert(JSON.stringify(result));
+	for (var salt in result.salts_g_gal) {
+		var output_name = '#g-gal-' + salt;
+		$(output_name).html(round(result.salts_g_gal[salt],2));
+	}
+	for (var salt in result.salts_g) {
+		var output_name = '#g-' + salt;
+		$(output_name).html(round(result.salts_g[salt],2));
+	}
+	for (var salt in result.salts_tsp) {
+		var output_name = '#tsp-' + salt;
+		$(output_name).html(round(result.salts_tsp[salt],2));
+	}
+
+	for (var ion in input.target_profile) {
+		var output_name = "#target-" + ion;
+		$(output_name).html(round(input.target_profile[ion],2));
+	}
+
+	for (var ion in input.target_profile) {
+		var output_name = "#added-" + ion;
+		$(output_name).html(round(result.ions_added[ion],2));
+	}
+
+	for (var ion in input.target_profile) {
+		var output_name = "#total-" + ion;
+		$(output_name).html(round(result.ions[ion],2));
+	}
+
+	for (var ion in input.target_profile) {
+		var output_name = "#error-" + ion;
+		$(output_name).html(round(result.ion_errors[ion],2));
+	}
+	$("#g-gallons").html("grams in " + input.water_gallons + " gallons")
+	$("#tsp-gallons").html("tsp in " + input.water_gallons + " gallons")
+}
+
+
+function clear_output_tables()
+{
+	for (var salt in parameters.salts) {
+		$('#g-gal-'+salt).html('');
+		$('#g-'+salt).html('');
+		$('#tsp-'+salt).html('');
+	}
+// TODO: clear ion table
+}
+
+
+function set_starting()
+{
+	var profile_name = $("#starting-profile-select").val();
+	var profile = standard_initial_profiles[profile_name];
+	for (var ion in profile) {
+		var input_name = "#starting-" + ion;
+		$(input_name).val(profile[ion]);
+	}
+}
+
+
+function set_desired()
+{
+	var profile_name = $("#desired-profile-select").val();
+	var profile = standard_target_profiles[profile_name];
+	for (var ion in profile) {
+		var input_name = "#input-" + ion;
+		$(input_name).val(profile[ion]);
+	}
+}
+
+
+function setup_salt_table()
+{
+	for (var salt in parameters.salts) {
+		$('#salt-table').append("<tr>"
+			+ "<th>"+salt+"</th>"
+			+ "<td><input type='checkbox' id='use-"+salt+"' checked /></td>"
+			+ "<td id='g-gal-"+salt+"'></td>"
+			+ "<td id='g-"+salt+"'></td>"
+			+ "<td id='tsp-"+salt+"'></td>"
+			+ "</tr>");
+	}
+};
+
+
+$(document).ready(function() {
+	for (var profile_name in standard_initial_profiles) {
+		$('#starting-profile-select')
+          .append($('<option>', { value : profile_name })
+          .text(profile_name));
+	}
+	for (var profile_name in standard_target_profiles) {
+		$('#desired-profile-select')
+          .append($('<option>', { value : profile_name })
+          .text(profile_name));
+	}
+	setup_salt_table();
+});
+</script>
+
+
+<body>
+<label>Gallons of water to treat</label><input type="number" id='water-gallons' value=5.0></body>
+
+
+
+
+
+<table>
+
+<tr>
+<th></th>
+<th>Standard profiles</th>
+<th>Calcium</th>
+<th>Magnesium</th>
+<th>Sodium</th>
+<th>Sulfate</th>
+<th>Chloride</th>
+<th>Bicarbonate</th>
+</tr>
+
+<tr>
+<td>Desired Water Profile</td>
+<td>
+<select id="desired-profile-select" onChange="set_desired()">
+<option></option>
+</select>
+</td>
+<td><input type="number" id='input-calcium' value=55.0 /></td>
+<td><input type="number" id='input-magnesium' value=10.0 /></td>
+<td><input type="number" id='input-sodium' value=10.0 /></td>
+<td><input type="number" id='input-sulfate' value=75.0 /></td>
+<td><input type="number" id='input-chloride' value=63.0 /></td>
+<td><input type="number" id='input-bicarbonate' value=40.0 /></td>
+</tr>
+
+<tr>
+<td>Starting Water Profile</td>
+<td>
+<select id="starting-profile-select" onChange="set_starting()">
+<option></option>
+</select>
+</td>
+<td><input type="number" id='starting-calcium' value=0.0 /></td>
+<td><input type="number" id='starting-magnesium' value=0.0 /></td>
+<td><input type="number" id='starting-sodium' value=0.0 /></td>
+<td><input type="number" id='starting-sulfate' value=0.0 /></td>
+<td><input type="number" id='starting-chloride' value=0.0 /></td>
+<td><input type="number" id='starting-bicarbonate' value=0.0 /></td>
+</tr>
+
+</table>
+
+<label>Maintain Sulfate:Chloride ratio even if it goes over targets: </label>
+<input type="checkbox" id='maintain-sulfate-chloride-ratio' /><br>
+
+<button onClick="optimize()">Find Salt Additions</button>
+
+
+<table id='salt-table'>
+
+<tr>
+<th></th>
+<th>Enabled</th>
+<th>grams/gallon</th>
+<th id='g-gallons'>grams in X gallons</th>
+<th id='tsp-gallons'>tsp in X gallons</th>
+</tr>
+</table>
+
+
+<table>
+<tr>
+	<th></th>
+	<th>Added</th>
+	<th>Total</th>
+	<th>Target</th>
+	<th>Error</th>
+</tr>
+
+<tr>
+<th>Calcium</th>
+<td id='added-calcium'></td>
+<td id='total-calcium'></td>
+<td id='target-calcium'></td>
+<td id='error-calcium'></td>
+</tr>
+
+<tr>
+<th>Magnesium</th>
+<td id='added-magnesium'></td>
+<td id='total-magnesium'></td>
+<td id='target-magnesium'></td>
+<td id='error-magnesium'></td>
+</tr>
+
+<tr>
+<th>Sodium</th>
+<td id='added-sodium'></td>
+<td id='total-sodium'></td>
+<td id='target-sodium'></td>
+<td id='error-sodium'></td>
+</tr>
+
+<tr>
+<th>Sulfate</th>
+<td id='added-sulfate'></td>
+<td id='total-sulfate'></td>
+<td id='target-sulfate'></td>
+<td id='error-sulfate'></td>
+</tr>
+
+<tr>
+<th>Chloride</th>
+<td id='added-chloride'></td>
+<td id='total-chloride'></td>
+<td id='target-chloride'></td>
+<td id='error-chloride'></td>
+</tr>
+
+<tr>
+<th>Bicarbonate</th>
+<td id='added-bicarbonate'></td>
+<td id='total-bicarbonate'></td>
+<td id='target-bicarbonate'></td>
+<td id='error-bicarbonate'></td>
+</tr>
+
+</table>
+
+
+</body>
+
+</html>
