@@ -190,6 +190,8 @@ function optimize()
 	}
 	$("#g-gallons").html("grams in " + input.water_gallons + " gallons")
 	$("#tsp-gallons").html("tsp in " + input.water_gallons + " gallons")
+	$("#boil-g-gallons").html("grams in " + input.boil_volume + " gallons")
+	$("#boil-tsp-gallons").html("tsp in " + input.boil_volume + " gallons")
 }
 
 
@@ -226,10 +228,22 @@ function set_desired()
 }
 
 
-function setup_salt_table()
+function setup_salt_table(input)
 {
 	var i=0;
+	var boil_salts = [];
+	$('#salt-table').append(
+		"<tr>"
+		+ "<th>Pre-Mash Additions</th>"
+		+ "<th>Enabled</th>"
+		+ "<th>grams/gallon</th>"
+		+ "<th id='g-gallons'>grams in X gallons</th>"
+		+ "<th id='tsp-gallons'>tsp in X gallons</th>"
+		+ "</tr>");
 	for (var salt in parameters.salts) {
+		if (salt in input.boil_salts) {
+			continue;
+		}
 		var name = salt;
 		var href = null;
 		if (salt in salt_names) {
@@ -248,6 +262,35 @@ function setup_salt_table()
 			+ "</tr>");
 		i++;
 	}
+	$('#salt-table').append(
+		"<tr>"
+		+ "<th>Boil Additions</th>"
+		+ "<th>Enabled</th>"
+		+ "<th>grams/gallon</th>"
+		+ "<th id='boil-g-gallons'>grams in X gallons</th>"
+		+ "<th id='boil-tsp-gallons'>tsp in X gallons</th>"
+		+ "</tr>");
+	for (var salt in input.boil_salts){
+		var name = salt;
+		var href = null;
+		if (salt in salt_names) {
+			name = salt_names[salt].name;
+			href = salt_names[salt].href;
+			if (href) {
+				name = name+" <a href='"+href+"'>[buy]</a>"
+			}
+		}
+		$('#salt-table').append("<tr " + (i%2==1 ? "class='grayrow'":"") + " >"
+			+ "<td>"+name+"</td>"
+			+ "<td><input type='checkbox' id='use-"+salt+"' checked onChange='optimize();' /></td>"
+			+ "<td id='g-gal-"+salt+"'></td>"
+			+ "<td id='g-"+salt+"'></td>"
+			+ "<td id='tsp-"+salt+"'></td>"
+			+ "</tr>");
+		i++;
+	}
+
+
 };
 
 
@@ -291,7 +334,7 @@ $(document).ready(function() {
           .text(profile_name));
 	}
 
-	setup_salt_table();
+	setup_salt_table(example_input);
 	reset_ion_table(example_input);
 	optimize();
 });
@@ -360,14 +403,6 @@ $(document).ready(function() {
 <input type="checkbox" id='maintain-sulfate-chloride-ratio' onChange='optimize();' /><br>
 
 <table id='salt-table'>
-
-<tr>
-<th></th>
-<th>Enabled</th>
-<th>grams/gallon</th>
-<th id='g-gallons'>grams in X gallons</th>
-<th id='tsp-gallons'>tsp in X gallons</th>
-</tr>
 </table>
 
 
