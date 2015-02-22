@@ -107,6 +107,11 @@ var example_input = {
         "pickling_lime": 1000.0,
         "magnesium_chloride": 1000.0,
         "chalk": 1.0
+    },
+    "boil_salts": {
+        'baking_soda':true,
+        'chalk':true,
+        'pickling_lime':true
     }
 }
 
@@ -389,10 +394,16 @@ function solution_to_json(parameters, input, mproblem, solution)
     for (var salt in input.max_salts) {
         var snr = mproblem.variables.name_number[salt];
         jsolution.salts_g_gal[salt] = solution[snr];
+        var gals = input.water_gallons;
+        if (salt in input.boil_salts && input.boil_volume) {
+            gals = input.boil_volume;
+        }
+        console.log(">>> " + salt + " : " + gals);
+
         jsolution.salts_g[salt] = solution[snr] 
-            * input.water_gallons;
+            * gals;
         jsolution.salts_tsp[salt] = solution[snr] 
-            * input.water_gallons / parameters.salts_g_tsp[salt];
+            * gals / parameters.salts_g_tsp[salt];
     }
 
     // Extract ion errors
@@ -423,8 +434,11 @@ function optimize_salts(parameters, input)
         mproblem.i_limits,
         mproblem.e_constraints,
         mproblem.e_limits
-        );       
-    // alert("raw solution: " + JSON.stringify(x) +"<br><br>");
+        );
+    console.log("raw problem: " + JSON.stringify(mproblem));
+
+
+    console.log("raw solution: " + JSON.stringify(x) +"<br><br>");
     var solution =   numeric.trunc(x.solution,1e-4);
 
 
