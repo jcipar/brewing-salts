@@ -1,4 +1,4 @@
-# brewing-salts
+# Brewing Salts
 Automatically determine salt additions for brewing water.
 
 This is a web-based tool to determine what minerals to add to brewing water to achieve a particular target water profile. It is currently a work in progress. In addition to the rough user interface, it does not try to model maximum solubility (especially relevant for chalk), or mash vs. kettle adjustments.
