@@ -2,7 +2,7 @@
 
 git checkout master
 git pull
-git checkou gh-pages
+git checkout gh-pages
 git pull
 git merge master
 git push
