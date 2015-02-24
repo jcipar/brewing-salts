@@ -131,3 +131,9 @@ a:visited{color: firebrick;}
 	font-size: x-small;
 }
 
+.warning {
+	color: firebrick;
+	font-weight: bold;
+	margin-bottom: 0.1in;
+}
+
