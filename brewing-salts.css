@@ -112,7 +112,10 @@ button {
 	text-decoration:none;
 }
 
-
+.unit {
+    font-size: small;
+    float: right;
+}
 
 a {
     cursor: pointer;

@@ -60,6 +60,11 @@ var parameters = {
             "chloride": 92.2
         }
     },
+    "acids": {
+        "sauermalz": 125.0,
+        "lactic": 153.1,
+        "phosphoric": 14.88
+    },
     "salts_g_tsp": {
         "gypsum": 4.0,
         "epsom": 4.5,
@@ -71,32 +76,40 @@ var parameters = {
         "magnesium_chloride": 3.2
     },
     "ions": {  // Map ion->relative_importance
-        "calcium": 10.0,
-        "magnesium": 1.0,
-        "sodium": 1.0,
+        "calcium": 1.0,
+        "magnesium": 10.0,
+        "sodium": 10.0,
         "sulfate": 100.0,
         "chloride": 100.0,
-        "bicarbonate": 1.0
+        "bicarbonate": 1.0,
+    },
+    "residual_alkalinity_contributions": {
+        "bicarbonate": 0.8197,
+        "calcium": -0.7143,
+        "magnesium": -0.5882,
+        "acid": -1.0
     }
 }
 
 var example_input = {
-    "water_gallons": 6.0,
+    "mash_gallons": 5.5,
+    "sparge_gallons": 0.0,
+    "target_residual_alkalinity": -95.0,
     "target_profile": {  // Map from ion->ppm. Only list ions you care about.
-        "calcium": 55.0,
-        "magnesium": 10.0,
-        "sodium": 10.0,
-        "sulfate": 75.0,
-        "chloride": 63.0,
-        "bicarbonate": 40.0
+        "calcium": 50.0,
+        "magnesium": 5.0,
+        "sodium": 5.0,
+        "sulfate": 55.0,
+        "chloride": 70.0,
+        "bicarbonate": 0.0,
     },
     "initial_profile": { // Map from ion->ppm
-        "calcium": 4.0,
-        "magnesium": 0.9,
-        "sodium": 32.6,
-        "sulfate": 5.5,
-        "chloride": 23.2,
-        "bicarbonate": 49.2
+        "calcium": 20.8,
+        "magnesium": 4.0,
+        "sodium": 79.0,
+        "sulfate": 28.0,
+        "chloride": 120.0,
+        "bicarbonate": 60.5
     },
     "max_salts": {  // Map from ion->(g/gal). Only list salts you want to use.
         "gypsum": 1000.0,
@@ -106,12 +119,12 @@ var example_input = {
         "calcium_chloride": 1000.0,
         "pickling_lime": 1000.0,
         "magnesium_chloride": 1000.0,
-        "chalk": 1.0
+        "chalk": 1000.0
     },
-    "boil_salts": {
-        'baking_soda':true,
-        'chalk':true,
-        'pickling_lime':true
+    "max_acids": {
+        "sauermalz": 1000.0,
+        "lactic": 1000.0,
+        "phosphoric": 1000.0
     }
 }
 
@@ -173,6 +186,7 @@ var example_output = {
 
 function setup_problem(parameters, input)
 {
+    //input.target_profile.acid = 0.0;
     var problem = {"i_constraints": [], "e_constraints": []};
     problem["objective"] = problem_objective(parameters, input);
     problem.i_constraints = problem.i_constraints.concat(
@@ -181,20 +195,35 @@ function setup_problem(parameters, input)
         limit_constraints(parameters, input));
 
     problem.e_constraints = problem.e_constraints.concat(
-        ion_constraints(parameters, input));
+        ion_e_constraints(parameters, input));
+    problem.e_constraints = problem.e_constraints.concat(
+        acid_e_constraints(parameters, input));
+    problem.e_constraints = problem.e_constraints.concat(
+        ra_e_constraints(parameters, input));
     return problem;
 }
 
 function problem_objective(parameters, input)
 {
     var objective = {}
+    objective['abse_residual_alkalinity'] = 1000.0;
     for (var ion in input.target_profile) {
         var vname = "abse_" + ion;
         objective[vname] = parameters.ions[ion];
     }
     // L1 regularizer to encourage sparse solutions.
+    // These regularizer terms need to be pretty high, but
+    // that won't interfere with the solution, since all of
+    // the coefficients that use the variables are at least
+    // 14.
     for (var salt in input.max_salts) {
-        objective[salt] = 0.001;
+        objective[salt] = 1.0;
+        if (input.sparge_gallons && input.sparge_gallons > 0){
+            objective["sparge_" + salt] = 1.0;
+        }
+    }
+    for (var acid in input.max_acids) {
+        objective[acid] = 1.0;
     }
     return objective;
 }
@@ -202,20 +231,28 @@ function problem_objective(parameters, input)
 function abs_constraints(parameters, input)
 {
     var constraints = [];
+    constraints = constraints.concat(abs_constraint('residual_alkalinity'));
     for (var ion in input.target_profile) {
-        var vna = "abse_" + ion;
-        var vne = "e_" + ion;
-
-        var cons = {"rhs": 0.0, "lhs": {}}
-        cons.lhs[vna] = -1.0;
-        cons.lhs[vne] = 1.0;
-        constraints.push(cons);
-
-        cons = {"rhs": 0.0, "lhs": {}}
-        cons.lhs[vna] = -1.0;
-        cons.lhs[vne] = -1.0;
-        constraints.push(cons);
+        constraints = constraints.concat(abs_constraint(ion));
     }
+    return constraints;
+}
+
+
+function abs_constraint(ion)
+{
+    var constraints = [];
+    var vna = "abse_" + ion;
+    var vne = "e_" + ion;
+    var cons = {"rhs": 0.0, "lhs": {}}
+    cons.lhs[vna] = -1.0;
+    cons.lhs[vne] = 1.0;
+    constraints.push(cons);
+    cons = {"rhs": 0.0, "lhs": {}}
+    cons.lhs[vna] = -1.0;
+    cons.lhs[vne] = -1.0;
+    constraints.push(cons);
+    
     return constraints;
 }
 
@@ -224,42 +261,33 @@ function limit_constraints(parameters, input)
 {
     var constraints = []
     for (var salt in input.max_salts) {
-        var cons = {"rhs": 0.0, "lhs": {}};
-        cons.lhs[salt] = -1.0;
-        constraints.push(cons);
+        constraints.push(non_negative(salt));
 
-        cons = {"rhs": input.max_salts[salt], "lhs": {}};
+        var cons = {"rhs": input.max_salts[salt], "lhs": {}};
         cons.lhs[salt] = 1.0;
+        if (input.sparge_gallons && input.sparge_gallons > 0) {
+            constraints.push(non_negative("sparge_" + salt));
+            cons.lhs["sparge_" + salt] = 1.0;
+        }
+        constraints.push(cons);
+    }
+    for (var acid in input.max_acids) {
+
+        constraints.push(non_negative(acid));
+
+        cons = {"rhs": input.max_acids[acid], "lhs": {}};
+        cons.lhs[acid] = 1.0;
         constraints.push(cons);
     }
     return constraints;
 }
 
 
-function ion_constraints(parameters, input)
+function non_negative(variable)
 {
-    var constraints = []
-    var ion_map = ion_salt_map(parameters);
-
-    for (var ion in input.target_profile) {
-        var error_ion = "e_" + ion;
-
-        var cons = {"rhs": (input.target_profile[ion] - input.initial_profile[ion]),
-            "lhs": {
-            }};
-        cons.lhs[error_ion] = 1.0;
-
-        for (var salt in input.max_salts) {
-            if (salt in ion_map[ion]) {
-                cons.lhs[salt] = ion_map[ion][salt];
-            } else {
-                cons.lhs[salt] = 0.0;
-            }
-        }
-
-        constraints.push(cons);
-    }
-    return constraints;
+    var cons = {"rhs": 0.0, "lhs": {}};
+    cons.lhs[variable] = -1.0;
+    return cons;
 }
 
 
@@ -274,6 +302,81 @@ function ion_salt_map(parameters)
     }
     return im;
 }
+
+
+function ion_e_constraints(parameters, input) 
+{
+    var constraints = []
+    var ion_map = ion_salt_map(parameters);
+    var sparge_gallons = 0.0;
+    if (input.sparge_gallons) {
+        sparge_gallons = input.sparge_gallons;
+    }
+    var total_gallons = input.mash_gallons + sparge_gallons;
+
+    for (var ion in input.target_profile) {
+        var cons = {"rhs": -input.initial_profile[ion], "lhs": {}};
+        cons.lhs["mash_" + ion] = -1.0;
+
+        var sparge_cons = {"rhs": -input.initial_profile[ion], "lhs": {}};
+        sparge_cons.lhs["sparge_" + ion] = -1.0;
+
+        for (var salt in input.max_salts) {
+            if (salt in ion_map[ion]) {
+                cons.lhs[salt] = ion_map[ion][salt];
+                if (input.sparge_gallons) {
+                    sparge_cons.lhs["sparge_" + salt] = ion_map[ion][salt];
+                }
+            } else {
+            }
+        }
+        constraints.push(cons);
+        if (input.sparge_gallons) {
+            constraints.push(sparge_cons);
+        }
+
+        cons = {"rhs": input.target_profile[ion], "lhs": {}};
+        cons.lhs["mash_" + ion] = input.mash_gallons / total_gallons;
+        cons.lhs["e_"+ion] = 1.0;
+        if (input.sparge_gallons) {
+            cons.lhs["sparge_" + ion] = sparge_gallons / total_gallons;
+        }
+        constraints.push(cons);
+    }
+    return constraints;
+}
+
+
+function acid_e_constraints(parameters, input)
+{
+    var cons = {"rhs": 0.0, "lhs": {"mash_acid":-1}};
+    for (var acid in input.max_acids) {
+        cons.lhs[acid] = parameters.acids[acid];
+    }
+    return [cons];
+}
+
+
+function ra_e_constraints(parameters, input)
+{
+    var constraints = []
+    var cons = {"rhs": 0.0, "lhs": {}};
+    cons.lhs["residual_alkalinity"] = -1;
+    for (var ion in parameters.residual_alkalinity_contributions) {
+        cons.lhs["mash_" + ion] = parameters.residual_alkalinity_contributions[ion];
+    }
+    constraints.push(cons);
+    cons = {"rhs": input.target_residual_alkalinity, "lhs": {}};
+    cons.lhs["residual_alkalinity"] = 1.0;
+    cons.lhs["e_residual_alkalinity"] = 1.0;
+    constraints.push(cons);
+    return constraints;
+}
+
+
+/////////////
+// Converting problem to matrix form
+/////////////
 
 
 function problem_to_matrix(problem)
@@ -383,27 +486,45 @@ function extract_variables(problem)
 
 function solution_to_json(parameters, input, mproblem, solution)
 {
-    var jsolution = {"salts_g_gal": {},
-        "salts_g": {},
-        "salts_tsp": {},
+    var jsolution = {"additions_per_gallon": {},
+        "additions_total": {},
+        "additions_tsp": {},
         "ions" : {},
         "ions_added": {},
         "ion_errors": {}};
 
     // Extract salt additions
     for (var salt in input.max_salts) {
-        var snr = mproblem.variables.name_number[salt];
-        jsolution.salts_g_gal[salt] = solution[snr];
-        var gals = input.water_gallons;
-        if (salt in input.boil_salts && input.boil_volume) {
-            gals = input.boil_volume;
-        }
-        console.log(">>> " + salt + " : " + gals);
+        var gals = input.mash_gallons;
 
-        jsolution.salts_g[salt] = solution[snr] 
+        jsolution.additions_per_gallon[salt] = get_value(mproblem, solution, salt);
+        jsolution.additions_total[salt] = get_value(mproblem, solution, salt)
             * gals;
-        jsolution.salts_tsp[salt] = solution[snr] 
+        jsolution.additions_tsp[salt] = get_value(mproblem, solution, salt) 
             * gals / parameters.salts_g_tsp[salt];
+
+        if (input.sparge_gallons) {
+            var name = "sparge_"+salt;
+            gals = input.sparge_gallons;
+
+            jsolution.additions_per_gallon[name] = get_value(mproblem, solution, name);
+            jsolution.additions_total[name] = get_value(mproblem, solution, name)
+                * gals;
+            jsolution.additions_tsp[name] = get_value(mproblem, solution, name) 
+                * gals / parameters.salts_g_tsp[salt];
+        }
+
+    }
+    // Extract acid additions
+    for (var acid in input.max_acids) {
+        var snr = mproblem.variables.name_number[acid];
+        jsolution.additions_per_gallon[acid] = solution[snr];
+        var gals = input.mash_gallons;
+
+        jsolution.additions_total[acid] = solution[snr] 
+            * gals;
+        jsolution.additions_tsp[acid] = solution[snr] 
+            * gals / parameters.salts_g_tsp[acid];
     }
 
     // Extract ion errors
@@ -416,14 +537,27 @@ function solution_to_json(parameters, input, mproblem, solution)
             - solution[inr]
             - input.initial_profile[ion];
     }
+    // Extract residual alkalinity
+    var ra_nr = mproblem.variables.name_number["residual_alkalinity"];
+    jsolution.residual_alkalinity = solution[ra_nr];
+    var era_nr =mproblem.variables.name_number["e_residual_alkalinity"];
+    jsolution.residual_alkalinity_error = solution[era_nr];
     return jsolution;
+}
+
+
+function get_value(mproblem, solution, name)
+{
+    var snr = mproblem.variables.name_number[name];
+    return solution[snr];
 }
 
 
 function optimize_salts(parameters, input)
 {
     var problem = setup_problem(parameters, input);
-    // document.write("problem: " + JSON.stringify(problem) + "<br><br>"); 
+    $('#problem').html(JSON.stringify(problem, null, 2));
+    //console.log("problem: " + JSON.stringify(problem, null,2) + "<br><br>"); 
     
     var mproblem = problem_to_matrix(problem);
     // document.write("mproblem: " + JSON.stringify(mproblem) + "<br><br>"); 
@@ -435,10 +569,11 @@ function optimize_salts(parameters, input)
         mproblem.e_constraints,
         mproblem.e_limits
         );
-    console.log("raw problem: " + JSON.stringify(mproblem));
+    //console.log("raw problem: " + JSON.stringify(mproblem));
 
 
-    console.log("raw solution: " + JSON.stringify(x) +"<br><br>");
+    //console.log("raw solution: " + JSON.stringify(x) +"<br><br>");
+    $('#raw-solution').html(JSON.stringify(x, null, 2));
     var solution =   numeric.trunc(x.solution,1e-4);
 
 

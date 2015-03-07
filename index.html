@@ -58,11 +58,11 @@ SOFTWARE. -->
 var salt_names = {
 	"gypsum": {
 		"name": "Gypsum",
-		"href": "http://www.amazon.com/gp/product/B0064OGEZG/ref=as_li_tl?ie=UTF8&camp=1789&creative=9325&creativeASIN=B0064OGEZG&linkCode=as2&tag=affectenterplantsteep-20&linkId=STJPJ7IW6NNNMK5P"
+	//	"href": "http://www.amazon.com/gp/product/B0064OGEZG/ref=as_li_tl?ie=UTF8&camp=1789&creative=9325&creativeASIN=B0064OGEZG&linkCode=as2&tag=affectenterplantsteep-20&linkId=STJPJ7IW6NNNMK5P"
 	},
 	"epsom": {
 		"name": "Epsom",
-		"href": "http://www.amazon.com/gp/product/B00JPITKP4/ref=as_li_tl?ie=UTF8&camp=1789&creative=9325&creativeASIN=B00JPITKP4&linkCode=as2&tag=affectenterplantsteep-20&linkId=NGAHF62RAWKQZE4W"
+	//	"href": "http://www.amazon.com/gp/product/B00JPITKP4/ref=as_li_tl?ie=UTF8&camp=1789&creative=9325&creativeASIN=B00JPITKP4&linkCode=as2&tag=affectenterplantsteep-20&linkId=NGAHF62RAWKQZE4W"
 	},
 	"table": {
 		"name": "Table Salt"
@@ -72,19 +72,31 @@ var salt_names = {
 	},
 	"calcium_chloride": {
 		"name": "Calcium Chloride",
-		"href": 'http://www.amazon.com/gp/product/B0064OGEVU/ref=as_li_tl?ie=UTF8&camp=1789&creative=9325&creativeASIN=B0064OGEVU&linkCode=as2&tag=affectenterplantsteep-20&linkId=DJUDISPURWWFFXQ4'
+	//	"href": 'http://www.amazon.com/gp/product/B0064OGEVU/ref=as_li_tl?ie=UTF8&camp=1789&creative=9325&creativeASIN=B0064OGEVU&linkCode=as2&tag=affectenterplantsteep-20&linkId=DJUDISPURWWFFXQ4'
 	},
 	"chalk": {
 		"name": "Chalk (Calcium Carbonate)",
-		"href": "http://www.amazon.com/gp/product/B0064GZPPO/ref=as_li_tl?ie=UTF8&camp=1789&creative=9325&creativeASIN=B0064GZPPO&linkCode=as2&tag=affectenterplantsteep-20&linkId=AF4SKAYMAWPALXCG"
+	//	"href": "http://www.amazon.com/gp/product/B0064GZPPO/ref=as_li_tl?ie=UTF8&camp=1789&creative=9325&creativeASIN=B0064GZPPO&linkCode=as2&tag=affectenterplantsteep-20&linkId=AF4SKAYMAWPALXCG"
 	},
 	"pickling_lime": {
 		"name": "Pickling Lime (Calcium Hydroxide)",
-		"href": "http://www.amazon.com/gp/product/B0084LZU1Q/ref=as_li_tl?ie=UTF8&camp=1789&creative=9325&creativeASIN=B0084LZU1Q&linkCode=as2&tag=affectenterplantsteep-20&linkId=5LY6HTXQQFQA2L2C"
+	//	"href": "http://www.amazon.com/gp/product/B0084LZU1Q/ref=as_li_tl?ie=UTF8&camp=1789&creative=9325&creativeASIN=B0084LZU1Q&linkCode=as2&tag=affectenterplantsteep-20&linkId=5LY6HTXQQFQA2L2C"
 	},
 	"magnesium_chloride": {
 		"name": "Magnesium Chloride",
-		"href": "http://www.amazon.com/gp/product/B008629MGM/ref=as_li_tl?ie=UTF8&camp=1789&creative=9325&creativeASIN=B008629MGM&linkCode=as2&tag=affectenterplantsteep-20&linkId=QJK5AYUF3GXEYYFS"
+	//	"href": "http://www.amazon.com/gp/product/B008629MGM/ref=as_li_tl?ie=UTF8&camp=1789&creative=9325&creativeASIN=B008629MGM&linkCode=as2&tag=affectenterplantsteep-20&linkId=QJK5AYUF3GXEYYFS"
+	},
+	"sauermalz": {
+		"name": "Sauermalz (Acidulated Malt)",
+		"units": "oz"
+	},
+	"lactic": {
+		"name": "Lactic Acid 88%",
+		"units": "ml"
+	},
+	"phosphoric": {
+		"name": "Phosphoric Acid 10%",
+		"units": "ml"
 	}
 }
 
@@ -140,13 +152,21 @@ function optimize()
 		var input_name = "#starting-" + ion;
 		input.initial_profile[ion] = Number($(input_name).val());
 	}
-	input.water_gallons = Number($('#water-gallons').val());
-	input.boil_volume = Number($('#boil-gallons').val());
+	input.mash_gallons = Number($('#mash-gallons').val());
+	input.sparge_gallons = Number($('#sparge-gallons').val());
+	input.target_residual_alkalinity = Number($('#target-residual-alkalinity').val())
 	for (var salt in parameters.salts) {
 		if ($('#use-'+salt).is(':checked')) {
 			input.max_salts[salt] = 1000.0;
 		} else {
 			delete input.max_salts[salt];
+		}
+	}
+	for (var acid in parameters.acids) {
+		if ($('#use-'+acid).is(':checked')) {
+			input.max_acids[acid] = 1000.0;
+		} else {
+			delete input.max_acids[acid];
 		}
 	}
 
@@ -169,18 +189,19 @@ function optimize()
 	var result = optimize_salts(parameters, input);
 	clear_output_tables();
 	reset_ion_table(input);
-	// alert(JSON.stringify(result));
-	for (var salt in result.salts_g_gal) {
+	console.log(JSON.stringify(result, null,2));
+	for (var salt in result.additions_per_gallon) {
+		// console.log("%%% " + salt);
 		var output_name = '#g-gal-' + salt;
-		$(output_name).html(round(result.salts_g_gal[salt],2));
+		$(output_name).html(round(result.additions_per_gallon[salt],2) + units(salt));
 	}
-	for (var salt in result.salts_g) {
+	for (var salt in result.additions_total) {
 		var output_name = '#g-' + salt;
-		$(output_name).html(round(result.salts_g[salt],2));
+		$(output_name).html(round(result.additions_total[salt],2)+ units(salt));
 	}
-	for (var salt in result.salts_tsp) {
+	for (var salt in result.additions_tsp) {
 		var output_name = '#tsp-' + salt;
-		$(output_name).html(round(result.salts_tsp[salt],2));
+		$(output_name).html(round(result.additions_tsp[salt],2));
 	}
 
 	for (var ion in input.target_profile) {
@@ -202,10 +223,18 @@ function optimize()
 		var output_name = "#error-" + ion;
 		$(output_name).html(round(result.ion_errors[ion],2));
 	}
-	$("#g-gallons").html("grams in " + input.water_gallons + " gallons")
-	$("#tsp-gallons").html("tsp in " + input.water_gallons + " gallons")
-	$("#boil-g-gallons").html("grams in " + input.boil_volume + " gallons")
-	$("#boil-tsp-gallons").html("tsp in " + input.boil_volume + " gallons")
+	$("#g-gallons").html("g in " + input.mash_gallons + " gal")
+	$("#tsp-gallons").html("tsp in " + input.mash_gallons + " gal")
+}
+
+
+function units(salt)
+{
+	if (salt_names[salt] && salt_names[salt].units) {
+		return " <span class='unit'>(" +salt_names[salt].units+")</span>";
+	} else {
+		return ""
+	}
 }
 
 
@@ -215,6 +244,17 @@ function clear_output_tables()
 		$('#g-gal-'+salt).html('');
 		$('#g-'+salt).html('');
 		$('#tsp-'+salt).html('');
+		$('#g-gal-sparge_'+salt).html('');
+		$('#g-sparge_'+salt).html('');
+		$('#tsp-sparge_'+salt).html('');
+	}
+	for (var acid in parameters.acids) {
+		$('#g-gal-'+acid).html('');
+		$('#g-'+acid).html('');
+		$('#tsp-'+acid).html('');
+		// $('#g-gal-sparge_'+salt).html('');
+		// $('#g-sparge_'+salt).html('');
+		// $('#tsp-sparge_'+salt).html('');
 	}
 // TODO: clear ion table
 }
@@ -238,6 +278,7 @@ function set_desired()
 	for (var ion in profile) {
 		var input_name = "#input-" + ion;
 		$(input_name).val(profile[ion]);
+		console.log("## " + input_name);
 	}
 }
 
@@ -248,64 +289,53 @@ function setup_salt_table(input)
 	var boil_salts = [];
 	$('#salt-table').append(
 		"<tr>"
-		+ "<th>Pre-Mash Additions</th>"
+		+ "<th>Mash Additions</th>"
 		+ "<th>Enabled</th>"
-		+ "<th>grams/gallon</th>"
-		+ "<th id='g-gallons'>grams in X gallons</th>"
-		+ "<th id='tsp-gallons'>tsp in X gallons</th>"
+		+ "<th>grams/gal</th>"
+		+ "<th id='g-gallons'>g in X gal</th>"
+		+ "<th id='tsp-gallons'>tsp in X gal</th>"
 		+ "</tr>");
-	for (var salt in parameters.salts) {
-		if (salt in input.boil_salts) {
-			continue;
-		}
-		var name = salt;
-		var href = null;
-		if (salt in salt_names) {
-			name = salt_names[salt].name;
-			href = salt_names[salt].href;
-			if (href) {
-				name = name+" <a href='"+href+"'>[buy]</a>"
-			}
-		}
-		$('#salt-table').append("<tr " + (i%2==1 ? "class='grayrow'":"") + " >"
-			+ "<td>"+name+"</td>"
-			+ "<td><input type='checkbox' id='use-"+salt+"' checked onChange='optimize();' /></td>"
-			+ "<td id='g-gal-"+salt+"'></td>"
-			+ "<td id='g-"+salt+"'></td>"
-			+ "<td id='tsp-"+salt+"'></td>"
-			+ "</tr>");
-		i++;
-	}
+	i = add_to_salt_table(parameters.salts, "", i, true);
+	i = add_to_salt_table(parameters.acids, "", i, true);
 	$('#salt-table').append(
 		"<tr>"
-		+ "<th>Boil Additions</th>"
-		+ "<th>Enabled</th>"
-		+ "<th>grams/gallon</th>"
-		+ "<th id='boil-g-gallons'>grams in X gallons</th>"
-		+ "<th id='boil-tsp-gallons'>tsp in X gallons</th>"
+		+ "<th>Sparge Additions</th>"
+		+ "<th></th>"
+		+ "<th>grams/gal</th>"
+		+ "<th id='g-gallons'>g in X gal</th>"
+		+ "<th id='tsp-gallons'>tsp in X gal</th>"
 		+ "</tr>");
-	for (var salt in input.boil_salts){
+	i = add_to_salt_table(parameters.salts, "sparge_", i);
+
+	
+};
+
+
+function add_to_salt_table(additions, prefix, i, first)
+{
+	for (var salt in additions) {
 		var name = salt;
 		var href = null;
 		if (salt in salt_names) {
 			name = salt_names[salt].name;
 			href = salt_names[salt].href;
-			if (href) {
+			if (first && href) {
 				name = name+" <a href='"+href+"'>[buy]</a>"
 			}
 		}
+		var  checkbox = "<input type='checkbox' id='use-"+salt+"' checked onChange='optimize();' />";
+		if (!first) { checkbox = ""; }
 		$('#salt-table').append("<tr " + (i%2==1 ? "class='grayrow'":"") + " >"
 			+ "<td>"+name+"</td>"
-			+ "<td><input type='checkbox' id='use-"+salt+"' checked onChange='optimize();' /></td>"
-			+ "<td id='g-gal-"+salt+"'></td>"
-			+ "<td id='g-"+salt+"'></td>"
-			+ "<td id='tsp-"+salt+"'></td>"
+			+ "<td>" + checkbox + "</td>"
+			+ "<td id='g-gal-"+prefix+salt+"'></td>"
+			+ "<td id='g-"+prefix+salt+"'></td>"
+			+ "<td id='tsp-"+prefix+salt+"'></td>"
 			+ "</tr>");
 		i++;
 	}
-
-
-};
+	return i;
+}
 
 
 function reset_ion_table(input)
@@ -361,20 +391,15 @@ $(document).ready(function() {
 <h1>Brewing Salts Calculator</h1>
 <div class='warning'>
 This is a work in progress.<br><br>
-
-The calculations for boil additions vs. pre-mash
-additions are incorrect, and were based on a misunderstanding regarding when
-to add certain salts. The calculated concentrations (grams / gallon) should
-be correct, but the separation between pre-mash and boil additions, and
-the total amounts for boil additions are wrong.<br>
-
 </div>
 
 
 
-<label>Gallons of water to treat (mash): </label><input type="number" id='water-gallons' value=5.0 step='any' min=0 onChange='optimize();' />
+<label>Gallons of water to treat (mash): </label><input type="number" id='mash-gallons' value=5.0 step='any' min=0 onChange='optimize();' />
 <br>
-<label>Gallons of water to treat (boil): </label><input type="number" id='boil-gallons' value=5.0 step='any' min=0 onChange='optimize();' />
+<label>Gallons of water to treat (sparge): </label><input type="number" id='sparge-gallons' value=5.0 step='any' min=0 onChange='optimize();' />
+<br>
+<label>Target residual alkalinity: </label><input type="number" id='target-residual-alkalinity' value=0.0 step='any' onChange='optimize();' />
 <br>
 
 

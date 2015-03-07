@@ -83,7 +83,8 @@ var standard_target_profiles = {
         "sodium": 5.0,
         "sulfate": 55.0,
         "chloride": 70.0,
-        "bicarbonate": 0.0
+        "bicarbonate": 0.0,
+        "residual_alkalinity": -95.0
     },
     "Yellow Hoppy": {
         "calcium": 75.0,
