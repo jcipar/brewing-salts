@@ -83,6 +83,14 @@ var parameters = {
         "chloride": 100.0,
         "bicarbonate": 1.0,
     },
+    "max_ions": {
+        "calcium": 150.0,
+        "magnesium": 30.0,
+        "sodium": 150.0,
+        "sulfate": 150.0,
+        "chloride": 250.0,
+        "bicarbonate": 250.0,
+    },
     "residual_alkalinity_contributions": {
         "bicarbonate": 0.8197,
         "calcium": -0.7143,

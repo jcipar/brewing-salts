@@ -28,15 +28,15 @@ SOFTWARE. -->
 <title>Brewing Salts</title>
 
 
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
+<link rel="stylesheet" href="https://ajax.googleapis.com/ajax/libs/jqueryui/1.11.3/themes/smoothness/jquery-ui.css" />
+<script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.11.3/jquery-ui.min.js"></script>
 
 <script type="text/javascript" src="numeric-1.2.6.js"></script>
 <script type="text/javascript" src="brewing-salts-numeric.js"></script>
 <script type="text/javascript" src="water-profile-library.js"></script>
 <link rel="stylesheet" type="text/css" href="brewing-salts.css" />
 
-<script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
-<link rel="stylesheet" href="https://ajax.googleapis.com/ajax/libs/jqueryui/1.11.3/themes/smoothness/jquery-ui.css" />
-<script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.11.3/jquery-ui.min.js"></script>
 
 <!-- Google Analytics -->
 <script>
@@ -88,7 +88,8 @@ var salt_names = {
 	},
 	"sauermalz": {
 		"name": "Sauermalz (Acidulated Malt)",
-		"units": "oz"
+		"units": "oz",
+		"tip": "Most calculators consider this part of the recipe, but here it is treated as a water modification. To treat it as part of your recipe, adjust your target RA appropriately."
 	},
 	"lactic": {
 		"name": "Lactic Acid 88%",
@@ -316,12 +317,18 @@ function add_to_salt_table(additions, prefix, i, first)
 	for (var salt in additions) {
 		var name = salt;
 		var href = null;
+		var tooltip = null;
 		if (salt in salt_names) {
 			name = salt_names[salt].name;
 			href = salt_names[salt].href;
+			tooltip = salt_names[salt].tip;
+			if (first && tooltip) {
+				name = name + "<abbr class='tooltip' title='" + tooltip + "'>[?]</abbr>";
+			}
 			if (first && href) {
 				name = name+" <a href='"+href+"'>[buy]</a>"
 			}
+
 		}
 		var  checkbox = "<input type='checkbox' id='use-"+salt+"' checked onChange='optimize();' />";
 		if (!first) { checkbox = ""; }
@@ -380,6 +387,11 @@ $(document).ready(function() {
 
 	setup_salt_table(example_input);
 	reset_ion_table(example_input);
+	$(document).tooltip();
+	$('#ra-tooltip').tooltip({hide: {delay: 3000}});
+	$('#ra-tooltip').tooltip("option", "content",
+		$('#top-note').html()
+	);
 	optimize();
 });
 </script>
@@ -390,18 +402,28 @@ $(document).ready(function() {
 <div id="content">
 <h1>Brewing Salts Calculator</h1>
 <div class='warning'>
-This is a work in progress.<br><br>
+This is a work in progress. You should check the suggested water modifications with a trusted
+tool like <a href="https://sites.google.com/site/brunwater/">[Bru'n Water]</a>.
+It makes no attempt to model sparge acidification at all.<br><br>
 </div>
 
 
-
+<div id='top-parameters'>
 <label>Gallons of water to treat (mash): </label><input type="number" id='mash-gallons' value=5.0 step='any' min=0 onChange='optimize();' />
 <br>
 <label>Gallons of water to treat (sparge): </label><input type="number" id='sparge-gallons' value=5.0 step='any' min=0 onChange='optimize();' />
 <br>
-<label>Target residual alkalinity: </label><input type="number" id='target-residual-alkalinity' value=0.0 step='any' onChange='optimize();' />
+<label>Target residual alkalinity <span class='tooltip' id='ra-tooltip' title='RA'>[?]</span>: </label><input type="number" id='target-residual-alkalinity' value=0.0 step='any' onChange='optimize();' />
 <br>
+</div>
 
+<div id='top-note' hidden>
+Residual Alkalinity (RA) combines the alkalinity of the water, the acid
+additions, as well as a model of how calcium and magnesium
+react with the grist to acidify the mash. If you don't know what RA value
+is appropriate for your recipe, refer to <a href="http://braukaiser.com/wiki/index.php?title=Beer_color,_alkalinity_and_mash_pH#simple_Guidelines_for_beer_color_and_suitable_brewing_waters">these charts from Kai</a>, or
+this <a href="http://howtobrew.com/section3/chapter15-3.html">page from How to Brew.</a>
+</div>
 
 <table>
 

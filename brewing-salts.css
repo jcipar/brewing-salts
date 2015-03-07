@@ -117,6 +117,32 @@ button {
     float: right;
 }
 
+#top-parameters {
+    float: left;
+}
+
+#top-note {
+    font-size: small;
+    float: right;
+    width: 4in;
+    margin-bottom: 0.1in;
+}
+
+.tooltip {
+   cursor: pointer;
+   font-size: small;
+   color: firebrick;
+   /*font-weight: bold;*/
+}
+
+.ui-tooltip {
+/*    width: 4in;
+    height: 4in;*/
+    max-width: 4in;
+    max-height: 4in;
+    font-family: Verdana, Helvetica, sans-serif;
+}
+
 a {
     cursor: pointer;
     font-size: small;
