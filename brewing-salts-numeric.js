@@ -101,7 +101,7 @@ var parameters = {
 
 var example_input = {
     "mash_gallons": 5.5,
-    "sparge_gallons": 0.0,
+    "sparge_gallons": 5.5,
     "target_residual_alkalinity": -95.0,
     "target_profile": {  // Map from ion->ppm. Only list ions you care about.
         "calcium": 50.0,
@@ -226,7 +226,7 @@ function problem_objective(parameters, input)
     // 14.
     for (var salt in input.max_salts) {
         objective[salt] = 1.0;
-        if (input.sparge_gallons && input.sparge_gallons > 0){
+        if (input.sparge_gallons && input.sparge_gallons > 0 && !alkaline_mineral(parameters, salt)){
             objective["sparge_" + salt] = 1.0;
         }
     }
@@ -273,7 +273,7 @@ function limit_constraints(parameters, input)
 
         var cons = {"rhs": input.max_salts[salt], "lhs": {}};
         cons.lhs[salt] = 1.0;
-        if (input.sparge_gallons && input.sparge_gallons > 0) {
+        if (input.sparge_gallons && input.sparge_gallons > 0 && !alkaline_mineral(parameters, salt)) {
             constraints.push(non_negative("sparge_" + salt));
             cons.lhs["sparge_" + salt] = 1.0;
         }
@@ -332,7 +332,7 @@ function ion_e_constraints(parameters, input)
         for (var salt in input.max_salts) {
             if (salt in ion_map[ion]) {
                 cons.lhs[salt] = ion_map[ion][salt];
-                if (input.sparge_gallons) {
+                if (input.sparge_gallons && !alkaline_mineral(parameters, salt)) {
                     sparge_cons.lhs["sparge_" + salt] = ion_map[ion][salt];
                 }
             } else {
@@ -381,6 +381,16 @@ function ra_e_constraints(parameters, input)
     return constraints;
 }
 
+
+function alkaline_mineral(parameters, salt)
+{
+    if (parameters.salts[salt].bicarbonate
+        && parameters.salts[salt].bicarbonate > 0) {
+        return true;
+    } else {
+        return false;
+    }
+}
 
 /////////////
 // Converting problem to matrix form
@@ -511,14 +521,14 @@ function solution_to_json(parameters, input, mproblem, solution)
         jsolution.additions_tsp[salt] = get_value(mproblem, solution, salt) 
             * gals / parameters.salts_g_tsp[salt];
 
-        if (input.sparge_gallons) {
-            var name = "sparge_"+salt;
+        var sparge_salt = "sparge_"+salt;
+        if (input.sparge_gallons && variable_exists(mproblem, sparge_salt)) {
             gals = input.sparge_gallons;
 
-            jsolution.additions_per_gallon[name] = get_value(mproblem, solution, name);
-            jsolution.additions_total[name] = get_value(mproblem, solution, name)
+            jsolution.additions_per_gallon[sparge_salt] = get_value(mproblem, solution, sparge_salt);
+            jsolution.additions_total[sparge_salt] = get_value(mproblem, solution, sparge_salt)
                 * gals;
-            jsolution.additions_tsp[name] = get_value(mproblem, solution, name) 
+            jsolution.additions_tsp[sparge_salt] = get_value(mproblem, solution, sparge_salt) 
                 * gals / parameters.salts_g_tsp[salt];
         }
 
@@ -551,6 +561,12 @@ function solution_to_json(parameters, input, mproblem, solution)
     var era_nr =mproblem.variables.name_number["e_residual_alkalinity"];
     jsolution.residual_alkalinity_error = solution[era_nr];
     return jsolution;
+}
+
+
+function variable_exists(mproblem, name)
+{
+    return mproblem.variables.name_number[name] != null;
 }
 
 
