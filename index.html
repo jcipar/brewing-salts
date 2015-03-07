@@ -76,6 +76,8 @@ var salt_names = {
 	},
 	"chalk": {
 		"name": "Chalk (Calcium Carbonate)",
+		"default_off": true,
+		"tip": "Chalk is very poorly soluble in water. Do not use this unless you are willing to go to extra lengths to dissolve it.",
 		"href": "http://www.amazon.com/gp/product/B0064GZPPO/ref=as_li_tl?ie=UTF8&camp=1789&creative=9325&creativeASIN=B0064GZPPO&linkCode=as2&tag=affectenterplantsteep-20&linkId=AF4SKAYMAWPALXCG"
 	},
 	"pickling_lime": {
@@ -322,6 +324,7 @@ function add_to_salt_table(additions, prefix, i, first)
 		var name = salt;
 		var href = null;
 		var tooltip = null;
+		var checked = "checked"
 		if (salt in salt_names) {
 			name = salt_names[salt].name;
 			href = salt_names[salt].href;
@@ -332,9 +335,11 @@ function add_to_salt_table(additions, prefix, i, first)
 			if (first && href) {
 				name = name+" <a class='buy-link' href='"+href+"'>[buy]</a>"
 			}
-
+			if (salt_names[salt].default_off == true) {
+				checked = ""
+			}
 		}
-		var  checkbox = "<input type='checkbox' id='use-"+salt+"' checked onChange='optimize();' />";
+		var  checkbox = "<input type='checkbox' id='use-"+salt+"' " + checked +" onChange='optimize();' />";
 		if (!first) { checkbox = ""; }
 		$('#salt-table').append("<tr " + (i%2==1 ? "class='grayrow'":"") + " >"
 			+ "<td>"+name+"</td>"

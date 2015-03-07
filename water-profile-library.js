@@ -50,6 +50,22 @@ var standard_initial_profiles = {
         "chloride": 120.0,
         "bicarbonate": 60.5
     },
+    "Toronto, ON, 2013": {
+        "calcium": 34.7,
+        "magnesium": 8.6,
+        "sodium": 14.5,
+        "sulfate": 27.4,
+        "chloride": 26.3,
+        "bicarbonate": 89.4
+    },
+    "Grand Rapids, MI, 2013": {
+        "calcium": 38.0,
+        "magnesium": 10.0,
+        "sodium": 7.0,
+        "sulfate": 28.0,
+        "chloride": 16.43,
+        "bicarbonate": 106
+    }
     // "Ocean": {
     //     "calcium": 412,
     //     "magnesium": 1284,
