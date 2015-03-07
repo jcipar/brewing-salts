@@ -102,12 +102,12 @@ var standard_target_profiles = {
         "chloride": 63.0,
         "bicarbonate": 40.0
     },
-    "Ocean": {
-        "calcium": 412,
-        "magnesium": 1284,
-        "sodium": 10781,
-        "sulfate": 2712,
-        "chloride": 19353,
-        "bicarbonate": 126
-    }
+    // "Ocean": {
+    //     "calcium": 412,
+    //     "magnesium": 1284,
+    //     "sodium": 10781,
+    //     "sulfate": 2712,
+    //     "chloride": 19353,
+    //     "bicarbonate": 126
+    // }
 }

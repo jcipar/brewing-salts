@@ -62,7 +62,7 @@ var salt_names = {
 	},
 	"epsom": {
 		"name": "Epsom",
-	//	"href": "http://www.amazon.com/gp/product/B00JPITKP4/ref=as_li_tl?ie=UTF8&camp=1789&creative=9325&creativeASIN=B00JPITKP4&linkCode=as2&tag=affectenterplantsteep-20&linkId=NGAHF62RAWKQZE4W"
+		"href": "http://www.amazon.com/gp/product/B00JPITKP4/ref=as_li_tl?ie=UTF8&camp=1789&creative=9325&creativeASIN=B00JPITKP4&linkCode=as2&tag=affectenterplantsteep-20&linkId=NGAHF62RAWKQZE4W"
 	},
 	"table": {
 		"name": "Table Salt"
@@ -72,19 +72,19 @@ var salt_names = {
 	},
 	"calcium_chloride": {
 		"name": "Calcium Chloride",
-	//	"href": 'http://www.amazon.com/gp/product/B0064OGEVU/ref=as_li_tl?ie=UTF8&camp=1789&creative=9325&creativeASIN=B0064OGEVU&linkCode=as2&tag=affectenterplantsteep-20&linkId=DJUDISPURWWFFXQ4'
+		"href": 'http://www.amazon.com/gp/product/B0064OGEVU/ref=as_li_tl?ie=UTF8&camp=1789&creative=9325&creativeASIN=B0064OGEVU&linkCode=as2&tag=affectenterplantsteep-20&linkId=DJUDISPURWWFFXQ4'
 	},
 	"chalk": {
 		"name": "Chalk (Calcium Carbonate)",
-	//	"href": "http://www.amazon.com/gp/product/B0064GZPPO/ref=as_li_tl?ie=UTF8&camp=1789&creative=9325&creativeASIN=B0064GZPPO&linkCode=as2&tag=affectenterplantsteep-20&linkId=AF4SKAYMAWPALXCG"
+		"href": "http://www.amazon.com/gp/product/B0064GZPPO/ref=as_li_tl?ie=UTF8&camp=1789&creative=9325&creativeASIN=B0064GZPPO&linkCode=as2&tag=affectenterplantsteep-20&linkId=AF4SKAYMAWPALXCG"
 	},
 	"pickling_lime": {
 		"name": "Pickling Lime (Calcium Hydroxide)",
-	//	"href": "http://www.amazon.com/gp/product/B0084LZU1Q/ref=as_li_tl?ie=UTF8&camp=1789&creative=9325&creativeASIN=B0084LZU1Q&linkCode=as2&tag=affectenterplantsteep-20&linkId=5LY6HTXQQFQA2L2C"
+		"href": "http://www.amazon.com/gp/product/B0084LZU1Q/ref=as_li_tl?ie=UTF8&camp=1789&creative=9325&creativeASIN=B0084LZU1Q&linkCode=as2&tag=affectenterplantsteep-20&linkId=5LY6HTXQQFQA2L2C"
 	},
 	"magnesium_chloride": {
 		"name": "Magnesium Chloride",
-	//	"href": "http://www.amazon.com/gp/product/B008629MGM/ref=as_li_tl?ie=UTF8&camp=1789&creative=9325&creativeASIN=B008629MGM&linkCode=as2&tag=affectenterplantsteep-20&linkId=QJK5AYUF3GXEYYFS"
+		"href": "http://www.amazon.com/gp/product/B008629MGM/ref=as_li_tl?ie=UTF8&camp=1789&creative=9325&creativeASIN=B008629MGM&linkCode=as2&tag=affectenterplantsteep-20&linkId=QJK5AYUF3GXEYYFS"
 	},
 	"sauermalz": {
 		"name": "Sauermalz (Acidulated Malt)",
@@ -93,11 +93,13 @@ var salt_names = {
 	},
 	"lactic": {
 		"name": "Lactic Acid 88%",
-		"units": "ml"
+		"units": "ml",
+		"href": "http://www.morebeer.com/products/lactic-acid-4-oz.html"
 	},
 	"phosphoric": {
 		"name": "Phosphoric Acid 10%",
-		"units": "ml"
+		"units": "ml",
+		"href": "http://www.morebeer.com/products/phosphoric-acid-4-oz-10-solution.html"
 	}
 }
 
@@ -226,6 +228,8 @@ function optimize()
 	}
 	$("#g-gallons").html("g in " + input.mash_gallons + " gal")
 	$("#tsp-gallons").html("tsp in " + input.mash_gallons + " gal")
+	$("#g-gallons-sparge").html("g in " + input.sparge_gallons + " gal")
+	$("#tsp-gallons-sparge").html("tsp in " + input.sparge_gallons + " gal")
 }
 
 
@@ -303,8 +307,8 @@ function setup_salt_table(input)
 		+ "<th>Sparge Additions</th>"
 		+ "<th></th>"
 		+ "<th>grams/gal</th>"
-		+ "<th id='g-gallons'>g in X gal</th>"
-		+ "<th id='tsp-gallons'>tsp in X gal</th>"
+		+ "<th id='g-gallons-sparge'>g in X gal</th>"
+		+ "<th id='tsp-gallons-sparge'>tsp in X gal</th>"
 		+ "</tr>");
 	i = add_to_salt_table(parameters.salts, "sparge_", i);
 
@@ -326,7 +330,7 @@ function add_to_salt_table(additions, prefix, i, first)
 				name = name + "<abbr class='tooltip' title='" + tooltip + "'>[?]</abbr>";
 			}
 			if (first && href) {
-				name = name+" <a href='"+href+"'>[buy]</a>"
+				name = name+" <a class='buy-link' href='"+href+"'>[buy]</a>"
 			}
 
 		}
