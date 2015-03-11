@@ -132,6 +132,7 @@ button {
    cursor: pointer;
    font-size: small;
    color: firebrick;
+   font-weight: bold;
    /*font-weight: bold;*/
 }
 

@@ -34,7 +34,7 @@ var standard_initial_profiles = {
         "chloride": 0,
         "bicarbonate": 0
     },
-    "Boston, Dec. 2014":  {
+    "Boston, MA, USA, Dec. 2014":  {
         "calcium": 4.0,
         "magnesium": 0.9,
         "sodium": 32.6,
@@ -42,7 +42,7 @@ var standard_initial_profiles = {
         "chloride": 23.2,
         "bicarbonate": 49.2
     },
-    "Cambridge, MA, 2013": {
+    "Cambridge, MA, USA, 2013": {
         "calcium": 20.8,
         "magnesium": 4.0,
         "sodium": 79.0,
@@ -50,7 +50,7 @@ var standard_initial_profiles = {
         "chloride": 120.0,
         "bicarbonate": 60.5
     },
-    "Toronto, ON, 2013": {
+    "Toronto, ON, CAN, 2013": {
         "calcium": 34.7,
         "magnesium": 8.6,
         "sodium": 14.5,
@@ -58,13 +58,37 @@ var standard_initial_profiles = {
         "chloride": 26.3,
         "bicarbonate": 89.4
     },
-    "Grand Rapids, MI, 2013": {
+    "Grand Rapids, MI, USA, 2013": {
         "calcium": 38.0,
         "magnesium": 10.0,
         "sodium": 7.0,
         "sulfate": 28.0,
         "chloride": 16.43,
         "bicarbonate": 106
+    },
+    "Christchurch, NZ, 2013": {
+        "calcium": 12.0,
+        "magnesium": 1.5,
+        "sodium": 6.1,
+        "sulfate": 5.0,
+        "chloride": 5.0,
+        "bicarbonate": 52.0
+    },
+    "San Francisco, CA, USA, 2013": {
+        "calcium": 13.0,
+        "magnesium": 5.3,
+        "sodium": 12.0,
+        "sulfate": 16.6,
+        "chloride": 10.2,
+        "bicarbonate": 58.6
+    },
+    "Redwood City, CA, USA, 2013": {
+        "calcium": 13.0,
+        "magnesium": 5.3,
+        "sodium": 12.0,
+        "sulfate": 16.6,
+        "chloride": 10.2,
+        "bicarbonate": 54.8
     }
     // "Ocean": {
     //     "calcium": 412,

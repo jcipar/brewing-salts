@@ -58,11 +58,9 @@ SOFTWARE. -->
 var salt_names = {
 	"gypsum": {
 		"name": "Gypsum",
-		"href": "http://www.amazon.com/gp/product/B00AW48R1I/ref=as_li_qf_sp_asin_il_tl?ie=UTF8&camp=1789&creative=9325&creativeASIN=B00AW48R1I&linkCode=as2&tag=affectenterplantsteep-20&linkId=JUZYCRAA2PRSWHJK"
 	},
 	"epsom": {
 		"name": "Epsom",
-		"href": "http://www.amazon.com/gp/product/B00JPITKP4/ref=as_li_tl?ie=UTF8&camp=1789&creative=9325&creativeASIN=B00JPITKP4&linkCode=as2&tag=affectenterplantsteep-20&linkId=NGAHF62RAWKQZE4W"
 	},
 	"table": {
 		"name": "Table Salt"
@@ -72,21 +70,17 @@ var salt_names = {
 	},
 	"calcium_chloride": {
 		"name": "Calcium Chloride",
-		"href": 'http://www.amazon.com/gp/product/B0064OGEVU/ref=as_li_tl?ie=UTF8&camp=1789&creative=9325&creativeASIN=B0064OGEVU&linkCode=as2&tag=affectenterplantsteep-20&linkId=DJUDISPURWWFFXQ4'
 	},
 	"chalk": {
 		"name": "Chalk (Calcium Carbonate)",
 		"default_off": true,
 		"tip": "Chalk is very poorly soluble in water. Do not use this unless you are willing to go to extra lengths to dissolve it.",
-		"href": "http://www.amazon.com/gp/product/B0064GZPPO/ref=as_li_tl?ie=UTF8&camp=1789&creative=9325&creativeASIN=B0064GZPPO&linkCode=as2&tag=affectenterplantsteep-20&linkId=AF4SKAYMAWPALXCG"
 	},
 	"pickling_lime": {
 		"name": "Pickling Lime (Calcium Hydroxide)",
-		"href": "http://www.amazon.com/gp/product/B0084LZU1Q/ref=as_li_tl?ie=UTF8&camp=1789&creative=9325&creativeASIN=B0084LZU1Q&linkCode=as2&tag=affectenterplantsteep-20&linkId=5LY6HTXQQFQA2L2C"
 	},
 	"magnesium_chloride": {
 		"name": "Magnesium Chloride",
-		"href": "http://www.amazon.com/gp/product/B008629MGM/ref=as_li_tl?ie=UTF8&camp=1789&creative=9325&creativeASIN=B008629MGM&linkCode=as2&tag=affectenterplantsteep-20&linkId=QJK5AYUF3GXEYYFS"
 	},
 	"sauermalz": {
 		"name": "Sauermalz (Acidulated Malt)",
@@ -96,12 +90,10 @@ var salt_names = {
 	"lactic": {
 		"name": "Lactic Acid 88%",
 		"units": "ml",
-		"href": "http://www.morebeer.com/products/lactic-acid-4-oz.html"
 	},
 	"phosphoric": {
 		"name": "Phosphoric Acid 10%",
 		"units": "ml",
-		"href": "http://www.morebeer.com/products/phosphoric-acid-4-oz-10-solution.html"
 	}
 }
 
@@ -333,7 +325,7 @@ function add_to_salt_table(additions, prefix, i, first)
 				name = name + "<abbr class='tooltip' title='" + tooltip + "'>[?]</abbr>";
 			}
 			if (first && href) {
-				name = name+" <a class='buy-link' href='"+href+"'>[buy]</a>"
+				name = name+" <a class='buy-link' href='"+href+"'>[$]</a>"
 			}
 			if (salt_names[salt].default_off == true) {
 				checked = ""
@@ -383,6 +375,8 @@ function reset_ion_table(input)
 
 
 $(document).ready(function() {
+	
+
 	for (var profile_name in standard_initial_profiles) {
 		$('#starting-profile-select')
           .append($('<option>', { value : profile_name })
