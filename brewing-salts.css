@@ -171,3 +171,8 @@ a:visited{color: firebrick;}
 	margin-bottom: 0.1in;
 }
 
+
+.inlinelink, .inlinelink:link, .inlinelink:visited {
+    text-decoration: underline;
+}
+
