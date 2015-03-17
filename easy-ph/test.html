@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html>
+<meta charset="UTF-8">
+
+<!-- The MIT License (MIT)
+
+Copyright (c) 2015 James Cipar
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE. -->
+
+<head>
+<title>Easy pH</title>
+
+<link rel="stylesheet" type="text/css" href="easy-ph.css" />
+
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
+<link rel="stylesheet" href="https://ajax.googleapis.com/ajax/libs/jqueryui/1.11.3/themes/smoothness/jquery-ui.css" />
+<script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.11.3/jquery-ui.min.js"></script>
+
+<script src="numeric-1.2.6.js"></script>
+<script type="text/javascript" src="extract-colors.js"></script>
+
+
+<script type="text/javascript">
+"use strict";
+
+
+function test(canvas)
+{
+	var colors = extract_colors(canvas)
+	var context = canvas.getContext("2d");
+	for (var rect_i in colors.swatch_locations) {
+		var rect = colors.swatch_locations[rect_i];
+		context.strokeRect(rect[0], rect[1], rect[2], rect[3]);
+		$('#output').html(JSON.stringify(colors, null, 2));
+	}
+	context.strokeRect(colors.sample_location[0],
+		colors.sample_location[1],
+		colors.sample_location[2],
+		colors.sample_location[3]);
+	var test_value = [38, 36, 25];
+	$('#output').html(JSON.stringify(estimate_value(test_value, colors.swatches), null, 2));
+}
+
+
+	
+$(document).ready(function() {
+var v = document.getElementById('v');
+   navigator.getUserMedia = (navigator.getUserMedia ||
+                             navigator.webkitGetUserMedia ||
+                             navigator.mozGetUserMedia ||
+                             navigator.msGetUserMedia);
+   if (navigator.getUserMedia) {
+      // Request access to video only
+      navigator.getUserMedia(
+         {
+            video:true,
+            audio:false
+         },        
+         function(stream) {
+            var url = window.URL || window.webkitURL;
+            v.src = url ? url.createObjectURL(stream) : stream;
+            v.play();
+         },
+         function(error) {
+            alert('Something went wrong. (error code ' + error.code + ')');
+            return;
+         }
+      );
+   }
+   else {
+      alert('Sorry, the browser you are using doesn\'t support getUserMedia');
+      return;
+   }
+
+   var isStreaming = false,
+    v = document.getElementById('v'),
+    c = document.getElementById('test_canvas'),
+    con = c.getContext('2d'),
+    w = 600,
+    h = 420,
+    greyscale = false;
+
+    v.addEventListener('canplay', function(e) {
+   if (!isStreaming) {
+      // videoWidth isn't always set correctly in all browsers
+      if (v.videoWidth > 0) h = v.videoHeight / (v.videoWidth / w);
+      c.setAttribute('width', w);
+      c.setAttribute('height', h);
+      // Reverse the canvas image
+     // con.translate(w, 0);
+     // con.scale(-1, 1);
+      isStreaming = true;
+   }
+}, false);
+
+    v.addEventListener('play', function() {
+   // Every 33 milliseconds copy the video image to the canvas
+   setInterval(function() {
+      if (v.paused || v.ended) return;
+      con.fillRect(0, 0, w, h);
+      con.drawImage(v, 0, 0, w, h);
+      test(c);
+   }, 100);
+}, false);
+
+	var test_image = new Image();
+	test_image.src = "test-1.png";
+	test_image.onload = function() {
+		var canvas = document.getElementById("test_canvas");
+		var context = canvas.getContext("2d");
+		context.drawImage(test_image, 0,0);
+		test(canvas);
+	};
+});
+	
+</script>
+
+</head>
+<body>
+<video id='v'></video>
+<canvas id="test_canvas" width="225" height="398"></canvas>
+
+<pre id="output">
+</pre>
+
+</body>
+</html>
